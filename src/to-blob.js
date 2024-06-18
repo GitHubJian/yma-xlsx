@@ -55,9 +55,7 @@ exports.toBuffer = function toBuffer(data, errorMap, excelMap) {
             const key = headingKey[j];
             const value = d[key];
             if (value instanceof Date) {
-                row.push(
-                    new Date(dayjs(value).format('YYYY-MM-DD HH:mm:ss z'))
-                );
+                row.push(new Date(dayjs(value).format('YYYY-MM-DD HH:mm:ss z')));
             } else {
                 const colConf = columnsMap[j];
                 const colConfValue = colConf.value;
@@ -100,9 +98,7 @@ exports.toBuffer = function toBuffer(data, errorMap, excelMap) {
                     if (filedMap.dataValidation.type === 'list') {
                         cell.dataValidation = {
                             ...filedMap.dataValidation,
-                            formulae: formatValidationList(
-                                filedMap.dataValidation.formulae
-                            ),
+                            formulae: formatValidationList(filedMap.dataValidation.formulae),
                         };
                     } else {
                         cell.dataValidation = filedMap.dataValidation;
@@ -123,8 +119,7 @@ exports.toBuffer = function toBuffer(data, errorMap, excelMap) {
     return wb.xlsx.writeBuffer();
 };
 
-exports.filetype =
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+exports.filetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 exports.blob = function blob(buf) {
     const blob = new Blob([buf], {

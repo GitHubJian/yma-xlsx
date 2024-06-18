@@ -8,9 +8,8 @@ function normalizeRule(rule) {
             return {
                 name: r,
             };
-        } else {
-            return r;
         }
+        return r;
     });
 }
 

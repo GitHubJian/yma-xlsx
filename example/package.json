@@ -19,7 +19,8 @@
         "yma-cli": "1.0.36",
         "yma-cli-lint": "1.0.36",
         "copy-webpack-plugin": "11.0.0",
-        "yma-component": "1.0.3"
+        "yma-component": "1.0.3",
+        "dayjs": "1.11.11"
     },
     "devDependencies": {}
 }

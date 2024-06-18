@@ -31,7 +31,7 @@ function getTimezoneOffsetMS(date) {
         date.getHours(),
         date.getMinutes(),
         date.getSeconds(),
-        date.getMilliseconds()
+        date.getMilliseconds(),
     );
     return time - utcTime;
 }
@@ -45,11 +45,8 @@ function getTimezoneOffsetMS(date) {
 function fixDate(date) {
     const importBugHotfixDiff = (function () {
         const basedate = new Date(1899, 11, 30, 0, 0, 0);
-        const dnthreshAsIs =
-            (new Date().getTimezoneOffset() - basedate.getTimezoneOffset()) *
-            60000;
-        const dnthreshToBe =
-            getTimezoneOffsetMS(new Date()) - getTimezoneOffsetMS(basedate);
+        const dnthreshAsIs = (new Date().getTimezoneOffset() - basedate.getTimezoneOffset()) * 60000;
+        const dnthreshToBe = getTimezoneOffsetMS(new Date()) - getTimezoneOffsetMS(basedate);
         return dnthreshAsIs - dnthreshToBe;
     })();
     return new Date(date.getTime() + importBugHotfixDiff);
@@ -64,14 +61,8 @@ function fixDate(date) {
 function isNeedFixDate(date) {
     const baseDate = new Date(1899, 11, 30, 0, 0, 0);
     const baseDateUtc = new Date(Date.UTC(1899, 11, 30, 0, 0, 0));
-    const timezoneOffsetFix =
-        baseDateUtc.valueOf() +
-        baseDate.getTimezoneOffset() * 60000 -
-        baseDate.valueOf();
-    return (
-        new Date(date.valueOf() - timezoneOffsetFix).getTimezoneOffset() !==
-        baseDate.getTimezoneOffset()
-    );
+    const timezoneOffsetFix = baseDateUtc.valueOf() + baseDate.getTimezoneOffset() * 60000 - baseDate.valueOf();
+    return new Date(date.valueOf() - timezoneOffsetFix).getTimezoneOffset() !== baseDate.getTimezoneOffset();
 }
 
 function formatTime(timeStr) {

@@ -1,0 +1,17 @@
+{
+    "0": [
+        {
+            "key": "password",
+            "label": "密码",
+            "messages": ["密码至少包含大小写字符、数字、特殊字符中的4种"]
+        }
+    ],
+    "1": [{"key": "username", "label": "用户名", "messages": ["xxxx 不合法"]}],
+    "2": [
+        {
+            "key": "username",
+            "label": "用户名",
+            "messages": ["用户名(x)字段已经存在"]
+        }
+    ]
+}

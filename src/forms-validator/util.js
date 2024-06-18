@@ -1,5 +1,4 @@
-const DATE_RE =
-    /^(\d{4})[-/]?(\d{1,2})?[-/]?(\d{0,2})[Tt\s]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?[.:]?(\d+)?$/;
+const DATE_RE = /^(\d{4})[-/]?(\d{1,2})?[-/]?(\d{0,2})[Tt\s]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?[.:]?(\d+)?$/;
 function parseDate(date) {
     if (date === null) {
         return new Date(NaN); // null is invalid
@@ -20,15 +19,7 @@ function parseDate(date) {
             let m = d[2] - 1 || 0;
             let ms = (d[7] || '0').substring(0, 3);
 
-            return new Date(
-                d[1],
-                m,
-                d[3] || 1,
-                d[4] || 0,
-                d[5] || 0,
-                d[6] || 0,
-                ms
-            );
+            return new Date(d[1], m, d[3] || 1, d[4] || 0, d[5] || 0, d[6] || 0, ms);
         }
     }
 
@@ -66,9 +57,7 @@ function isIncontinuityString(str) {
 
     return true;
 }
-function isStrongPassword(password, combination, level) {
-    level = level || combination.length;
-
+function isStrongPassword(password, combination) {
     let lv = 0;
     if (combination.indexOf(COMBINATION.Digit) > -1 && /[0-9]/.test(password)) {
         lv += 1;
@@ -78,28 +67,19 @@ function isStrongPassword(password, combination, level) {
         lv += 1;
     }
 
-    if (
-        combination.indexOf(COMBINATION.Capital) > -1 &&
-        /[A-Z]/.test(password)
-    ) {
+    if (combination.indexOf(COMBINATION.Capital) > -1 && /[A-Z]/.test(password)) {
         lv += 1;
     }
 
-    if (
-        combination.indexOf(COMBINATION.Special) > -1 &&
-        /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    ) {
+    if (combination.indexOf(COMBINATION.Special) > -1 && /[!@#$%^&*(),.?":{}|<>]/.test(password)) {
         lv += 1;
     }
 
-    if (
-        combination.indexOf(COMBINATION.Incontinuity) > -1 &&
-        isIncontinuityString(password)
-    ) {
+    if (combination.indexOf(COMBINATION.Incontinuity) > -1 && isIncontinuityString(password)) {
         lv += 1;
     }
 
-    return lv >= level;
+    return lv >= combination.length;
 }
 exports.isStrongPassword = isStrongPassword;
 
@@ -107,3 +87,8 @@ function isEmpty(v) {
     return v === null || v === undefined || String(v).trim().length === 0;
 }
 exports.isEmpty = isEmpty;
+
+function isFunction(v) {
+    return typeof v === 'function';
+}
+exports.isFunction = isFunction;

@@ -1,6 +1,5 @@
 const ExcelJS = require('exceljs');
 const {toBuffer, blob} = require('./to-blob');
-const FormValidator = require('./forms-validator');
 const FormsValidator = require('./forms-validator');
 
 function isString(val) {
@@ -15,39 +14,40 @@ function isPlainObject(val) {
     return Object.prototype.toString.call(val) === '[object Object]';
 }
 
-function normalize(fieldsMap) {
-    const newFieldsMap = Object.keys(fieldsMap).reduce(function (prev, cur) {
-        const config = fieldsMap[cur];
+function parseFieldMap(fieldMap) {
+    const keyMap = {};
+    const valMap = {};
+
+    const colNames = Object.keys(fieldMap);
+    colNames.forEach(function (colName) {
+        const config = fieldMap[colName];
         if (isString(config)) {
-            prev[cur] = {
-                key: config,
-                value: function (value) {
-                    return value;
-                },
+            keyMap[colName] = config;
+            valMap[config] = function (value) {
+                return value;
             };
         } else if (isPlainObject(config)) {
+            keyMap[colName] = config.key;
+
             const value = config.value;
             if (isPlainObject(value)) {
-                config.value = (function (enums) {
+                valMap[config.key] = (function (enums) {
                     return function (value) {
                         return enums[value];
                     };
                 })(value);
             } else if (isFunction(value)) {
-                config.value = value;
+                valMap[config.key] = value;
             } else {
-                console.log(
-                    `[fieldsMap.${cur}.value] must be a function or a object`
-                );
+                console.log(`[fieldMap.${colName}.value] must be function or object`);
             }
-
-            prev[cur] = config;
         }
+    });
 
-        return prev;
-    }, {});
-
-    return newFieldsMap;
+    return {
+        keyMap,
+        valMap,
+    };
 }
 
 function col2num(col) {
@@ -68,17 +68,8 @@ function num2col(num) {
     return col;
 }
 
-function parse(
-    buffer,
-    sheetname,
-    {
-        fieldRow = 1,
-        startRow = 2,
-        startColumn = 1,
-        fieldMap = {},
-        fieldRules = [],
-    }
-) {
+function parse(buffer, sheetname, {fieldRow = 1, startRow = 2, startColumn = 1, fieldMap = {}, fieldRules = []}) {
+    const {keyMap, valMap} = parseFieldMap(fieldMap);
     const workbook = new ExcelJS.Workbook();
 
     return workbook.xlsx
@@ -99,7 +90,7 @@ function parse(
                             if (colNumber >= fieldRowDataLength) {
                                 fieldName = num2col(colNumber);
                             } else {
-                                fieldName = fieldMap[fieldRowData[colNumber]];
+                                fieldName = keyMap[fieldRowData[colNumber]];
                                 if (!fieldName) {
                                     fieldName = num2col(colNumber);
                                 }
@@ -115,12 +106,46 @@ function parse(
 
             return data;
         })
-        .then(data => {
-            const formsValidate = new FormsValidator(fieldRules);
-
-            formsValidate.assert(data, function (message) {
-                debugger;
+        .then(table => {
+            if (fieldRules && fieldRules.length > 0) {
+                const formsValidate = new FormsValidator(fieldRules);
+                return new Promise(resolve => {
+                    formsValidate.assert(table, function (message) {
+                        resolve({
+                            table,
+                            message,
+                        });
+                    });
+                });
+            }
+            return new Promise(resolve => {
+                resolve({
+                    table,
+                    message: [],
+                });
             });
+        })
+        .then(({table, message}) => {
+            const data = table.map(function (t) {
+                const d = {};
+                const tKeys = Object.keys(t);
+                tKeys.forEach(tKey => {
+                    const valFn = valMap[tKey];
+                    d[tKey] = isFunction(valFn) ? valFn(t[tKey]) : t[tKey];
+                });
+
+                return d;
+            });
+
+            return {
+                table,
+                data,
+                message,
+            };
+        })
+        .then(res => {
+            res;
+            debugger;
         });
 }
 

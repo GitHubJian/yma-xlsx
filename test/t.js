@@ -80,7 +80,7 @@ toBuffer(
                 },
             ],
         },
-    }
+    },
 ).then(buf => {
     fse.writeFileSync(path.resolve(__dirname, 'output.xlsx'), buf);
 });

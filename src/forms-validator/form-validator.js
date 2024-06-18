@@ -26,7 +26,6 @@ FormValidator.prototype.assert = function (form, callback) {
     });
 
     const fn = compose(middleware);
-
     const context = [];
     fn(context, function () {
         callback(context);
