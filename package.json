@@ -7,6 +7,9 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
+    "files": [
+        "src"
+    ],
     "dependencies": {
         "dayjs": "1.11.10",
         "exceljs": "4.3.0"
