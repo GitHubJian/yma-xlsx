@@ -17,6 +17,7 @@ function isPlainObject(val) {
 function parseFieldMap(fieldMap) {
     const keyMap = {};
     const valMap = {};
+    const fieldRules = [];
 
     const colNames = Object.keys(fieldMap);
     colNames.forEach(function (colName) {
@@ -41,21 +42,20 @@ function parseFieldMap(fieldMap) {
             } else {
                 console.log(`[fieldMap.${colName}.value] must be function or object`);
             }
+
+            fieldRules.push({
+                key: config.key,
+                label: config.label || colName,
+                rules: config.rules,
+            });
         }
     });
 
     return {
         keyMap,
         valMap,
+        fieldRules,
     };
-}
-
-function col2num(col) {
-    let num = 0;
-    for (let i = 0; i < col.length; i++) {
-        num = num * 26 + (col.charCodeAt(i) - 64);
-    }
-    return num;
 }
 
 function num2col(num) {
@@ -68,8 +68,8 @@ function num2col(num) {
     return col;
 }
 
-function parse(buffer, sheetname, {fieldRow = 1, startRow = 2, startColumn = 1, fieldMap = {}, fieldRules = []}) {
-    const {keyMap, valMap} = parseFieldMap(fieldMap);
+function parse(buffer, sheetname, {fieldRow = 1, startRow = 2, startColumn = 1, fieldMap = {}}) {
+    const {keyMap, valMap, fieldRules} = parseFieldMap(fieldMap);
     const workbook = new ExcelJS.Workbook();
 
     return workbook.xlsx
@@ -142,10 +142,6 @@ function parse(buffer, sheetname, {fieldRow = 1, startRow = 2, startColumn = 1, 
                 data,
                 message,
             };
-        })
-        .then(res => {
-            res;
-            debugger;
         });
 }
 
