@@ -1,15 +1,13 @@
 {
     "name": "yma-xlsx",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "",
     "main": "./src/index.js",
     "scripts": {},
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "files": [
-        "src"
-    ],
+    "files": ["src"],
     "dependencies": {
         "dayjs": "1.11.10",
         "exceljs": "4.3.0"

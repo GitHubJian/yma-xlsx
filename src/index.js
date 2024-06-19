@@ -1,150 +1,53 @@
-const ExcelJS = require('exceljs');
-const {toBuffer, blob} = require('./to-blob');
-const FormsValidator = require('./forms-validator');
-
-function isString(val) {
-    return typeof val === 'string';
-}
-
-function isFunction(val) {
-    return typeof val === 'function';
-}
-
-function isPlainObject(val) {
-    return Object.prototype.toString.call(val) === '[object Object]';
-}
-
-function parseFieldMap(fieldMap) {
-    const keyMap = {};
-    const valMap = {};
-    const fieldRules = [];
-
-    const colNames = Object.keys(fieldMap);
-    colNames.forEach(function (colName) {
-        const config = fieldMap[colName];
-        if (isString(config)) {
-            keyMap[colName] = config;
-            valMap[config] = function (value) {
-                return value;
-            };
-        } else if (isPlainObject(config)) {
-            keyMap[colName] = config.key;
-
-            const value = config.value;
-            if (isPlainObject(value)) {
-                valMap[config.key] = (function (enums) {
-                    return function (value) {
-                        return enums[value];
-                    };
-                })(value);
-            } else if (isFunction(value)) {
-                valMap[config.key] = value;
-            } else {
-                console.log(`[fieldMap.${colName}.value] must be function or object`);
-            }
-
-            fieldRules.push({
-                key: config.key,
-                label: config.label || colName,
-                rules: config.rules,
-            });
-        }
-    });
-
-    return {
-        keyMap,
-        valMap,
-        fieldRules,
-    };
-}
-
-function num2col(num) {
-    let col = '';
-    while (num > 0) {
-        let remainder = (num - 1) % 26;
-        col = String.fromCharCode(65 + remainder) + col;
-        num = Math.floor((num - 1) / 26);
-    }
-    return col;
-}
-
-function parse(buffer, sheetname, {fieldRow = 1, startRow = 2, startColumn = 1, fieldMap = {}}) {
-    const {keyMap, valMap, fieldRules} = parseFieldMap(fieldMap);
-    const workbook = new ExcelJS.Workbook();
-
-    return workbook.xlsx
-        .load(buffer)
-        .then(workbook => {
-            const ws = workbook.getWorksheet(sheetname);
-            const fieldRowData = ws.findRow(fieldRow).values;
-            const fieldRowDataLength = fieldRowData.length;
-
-            let data = [];
-            ws.eachRow({includeEmpty: true}, function (row, rowNumber) {
-                if (rowNumber >= startRow) {
-                    const d = {};
-
-                    row.values.forEach(function (col, colNumber) {
-                        if (colNumber >= startColumn) {
-                            let fieldName;
-                            if (colNumber >= fieldRowDataLength) {
-                                fieldName = num2col(colNumber);
-                            } else {
-                                fieldName = keyMap[fieldRowData[colNumber]];
-                                if (!fieldName) {
-                                    fieldName = num2col(colNumber);
-                                }
-                            }
-
-                            d[fieldName] = col;
-                        }
-                    });
-
-                    data.push(d);
-                }
-            });
-
-            return data;
-        })
-        .then(table => {
-            if (fieldRules && fieldRules.length > 0) {
-                const formsValidate = new FormsValidator(fieldRules);
-                return new Promise(resolve => {
-                    formsValidate.assert(table, function (message) {
-                        resolve({
-                            table,
-                            message,
-                        });
-                    });
-                });
-            }
-            return new Promise(resolve => {
-                resolve({
-                    table,
-                    message: [],
-                });
-            });
-        })
-        .then(({table, message}) => {
-            const data = table.map(function (t) {
-                const d = {};
-                const tKeys = Object.keys(t);
-                tKeys.forEach(tKey => {
-                    const valFn = valMap[tKey];
-                    d[tKey] = isFunction(valFn) ? valFn(t[tKey]) : t[tKey];
-                });
-
-                return d;
-            });
-
-            return {
-                table,
-                data,
-                message,
-            };
-        });
-}
+const parse = require('./parse');
+const write = require('./write');
 
 exports.parse = parse;
-exports.toBuffer = toBuffer;
-exports.blob = blob;
+exports.write = write;
+exports.filetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function clone(v) {
+    return JSON.parse(JSON.stringify(v));
+}
+
+exports.dataConvert = function (dataArray, errorArrayLike, options) {
+    options = options || {};
+    const errorMessageKey = options.errorMessageKey || 'errmsg';
+    const separator = options.separator || ';';
+
+    const highlightArrayLike = {};
+    const errorKeys = Object.keys(errorArrayLike);
+    const newDataArray = [];
+
+    for (let i = 0, len = errorKeys.length; i < len; i++) {
+        const key = errorKeys[i];
+        const errorList = errorArrayLike[key];
+
+        const messages = [];
+        const highlightKeys = [];
+        if (errorList && errorList.length > 0) {
+            errorList.forEach(function (e) {
+                highlightKeys.push(e.key);
+                messages.push(e.messages.join(separator));
+            });
+        }
+
+        const value = clone(dataArray[key]);
+        value[errorMessageKey] = messages.join(separator);
+
+        highlightArrayLike[key] = highlightKeys;
+        newDataArray.push(value);
+    }
+
+    return {
+        dataArray: newDataArray,
+        highlightArrayLike,
+    };
+};
+
+exports.toBlob = function blob(buf) {
+    const blob = new Blob([buf], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    return blob;
+};
